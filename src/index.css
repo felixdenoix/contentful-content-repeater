@@ -1,0 +1,22 @@
+html,
+body,
+div {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+body{
+	min-height:500px;
+}
+.stage{
+	width:800px;
+	height:500px;
+}
+.Item{
+	height: 150px;
+    overflow: hidden;
+    background: white;
+}
