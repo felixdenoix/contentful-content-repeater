@@ -1,13 +1,12 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import {render} from 'react-dom';
-import '@atlaskit/css-reset';
-import { TextInput } from '@contentful/forma-36-react-components';
 import { init } from 'contentful-ui-extensions-sdk';
-import '@contentful/forma-36-react-components/dist/styles.css';
-import './index.css';
 import {SortableContainer, SortableElement} from 'react-sortable-hoc';
 import arrayMove from 'array-move';
+import '@contentful/forma-36-react-components/dist/styles.css';
+import './index.css';
+
 
 const SortableItem = SortableElement(({value}) => <div className="Item"><h3>{value.headline}</h3><p>{value.content}</p></div>);
 
@@ -39,7 +38,7 @@ export class App extends React.Component {
     }));
     this.props.sdk.field.setValue(this.state);
   };
- 
+ /**TEST add a basic tall div to see if window resizes**/
   render() {
     return (
 	    <div style={{height:800}}/>
