@@ -1,6 +1,6 @@
 {
   "id": "atcpc-content-repeater",
-  "name": "atcpc-content-repeater",
+  "name": "Content Repeater",
   "srcdoc": "./build/index.html",
   "fieldTypes": [
     "Object"    
