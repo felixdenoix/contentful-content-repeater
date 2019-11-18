@@ -50257,10 +50257,6 @@ function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj;
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-function _objectWithoutProperties(source, excluded) { if (source == null) return {}; var target = _objectWithoutPropertiesLoose(source, excluded); var key, i; if (Object.getOwnPropertySymbols) { var sourceSymbolKeys = Object.getOwnPropertySymbols(source); for (i = 0; i < sourceSymbolKeys.length; i++) { key = sourceSymbolKeys[i]; if (excluded.indexOf(key) >= 0) continue; if (!Object.prototype.propertyIsEnumerable.call(source, key)) continue; target[key] = source[key]; } } return target; }
-
-function _objectWithoutPropertiesLoose(source, excluded) { if (source == null) return {}; var target = {}; var sourceKeys = Object.keys(source); var key, i; for (i = 0; i < sourceKeys.length; i++) { key = sourceKeys[i]; if (excluded.indexOf(key) >= 0) continue; target[key] = source[key]; } return target; }
-
 //Add edit, add and remove ui and functions to mangage the list
 //edit: possible modal so to have RTE
 //truncate P content after xx numbver of words/characters
@@ -50281,36 +50277,35 @@ const DragHandle = (0, _reactSortableHoc.SortableHandle)(() => {
     d: "M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"
   })));
 });
-const SortableItem = (0, _reactSortableHoc.SortableElement)((_ref) => {
-  let props = Object.assign({}, _ref);
+const SortableItem = (0, _reactSortableHoc.SortableElement)(props => {
   return _react.default.createElement("div", {
     className: "Item"
   }, _react.default.createElement(DragHandle, null), _react.default.createElement("div", null, _react.default.createElement("h3", null, props.value.headline), _react.default.createElement("p", null, props.value.content)), _react.default.createElement("div", {
     className: "buttonArea"
-  }, _react.default.createElement(EditButton, {
-    index: props.index
-  }), _react.default.createElement(_forma36ReactComponents.Button, {
-    buttonType: "negative",
-    icon: "CloseTrimmed",
-    size: "small"
-  })));
+  }, _react.default.createElement("button", {
+    onClick: () => props.onChildEdit(props.value),
+    type: "button",
+    className: "editButton"
+  }, _react.default.createElement(_forma36ReactComponents.Icon, {
+    icon: "Edit"
+  })), _react.default.createElement("button", {
+    onClick: () => props.onChildRemove(props.id, props.childIndex),
+    className: "removeButton"
+  }, _react.default.createElement(_forma36ReactComponents.Icon, {
+    icon: "Close"
+  }))));
 });
-const SortableList = (0, _reactSortableHoc.SortableContainer)((_ref2) => {
-  let {
-    onEditItem: _onEditItem
-  } = _ref2,
-      props = _objectWithoutProperties(_ref2, ["onEditItem"]);
-
-  //console.log(props)
+const SortableList = (0, _reactSortableHoc.SortableContainer)(props => {
   return _react.default.createElement("div", {
     className: "sortableList"
   }, props.items.map((item, index) => _react.default.createElement(SortableItem, {
     key: item.id,
     index: index,
     value: item,
-    onEditItem: () => {
-      _onEditItem;
-    }
+    onChildEdit: props.onEdit,
+    onChildRemove: props.onRemove,
+    id: item.id,
+    childIndex: index
   })), _react.default.createElement(_forma36ReactComponents.Button, {
     buttonType: "naked",
     isFullWidth: true,
@@ -50321,8 +50316,8 @@ const SortableList = (0, _reactSortableHoc.SortableContainer)((_ref2) => {
 });
 
 class App extends _react.default.Component {
-  constructor(_props) {
-    super(_props);
+  constructor(props) {
+    super(props);
 
     _defineProperty(this, "onSortEnd", ({
       oldIndex,
@@ -50336,7 +50331,7 @@ class App extends _react.default.Component {
       this.props.sdk.field.setValue(this.state);
     });
 
-    _defineProperty(this, "onAddItem", () => {
+    _defineProperty(this, "handleAddItem", () => {
       const {
         items
       } = this.state;
@@ -50353,31 +50348,36 @@ class App extends _react.default.Component {
       }));
     });
 
-    _defineProperty(this, "onRemoveItem", () => {
-      //call modal with confirm button
-      //on confirm, remove item from state by id
-      console.log('remove');
+    _defineProperty(this, "handleEdit", item => {
+      console.log(item.id);
+      return _react.default.createElement(_forma36ReactComponents.TextInput, {
+        value: item.headline
+      });
     });
 
-    _defineProperty(this, "onEditItem", (...args) => {
-      console.log('edit');
-    });
-
-    _defineProperty(this, "EditButton", (_ref3) => {
-      let props = Object.assign({}, _ref3);
-      return _react.default.createElement(_forma36ReactComponents.Button, {
-        id: "edit-" + props.index,
-        buttonType: "muted",
-        icon: "EditTrimmed",
-        size: "small",
-        onClick: () => {
-          this.onEditItem;
+    _defineProperty(this, "handleRemoveModal", (itemId, itemIndex) => {
+      this.setState({
+        modal: {
+          confirm: "Delete Entry",
+          shown: true,
+          type: "delete"
+        },
+        remove: {
+          id: itemId,
+          index: itemIndex
         }
       });
     });
 
-    this.state = _props.sdk.field.getValue();
-    this.onAddItem = this.onAddItem.bind(this);
+    _defineProperty(this, "handleRemove", remitem => {
+      const removed = this.state.items.filter((item, index) => remitem.index !== index);
+      this.setState({
+        items: removed,
+        remove: null
+      });
+    });
+
+    this.state = props.sdk.field.getValue();
   }
 
   componentWillMount() {
@@ -50386,14 +50386,32 @@ class App extends _react.default.Component {
   }
 
   render() {
-    //console.log(this.state);
-    return _react.default.createElement(SortableList, {
+    return _react.default.createElement(_react.default.Fragment, null, _react.default.createElement(SortableList, {
       items: this.state.items,
       onSortEnd: this.onSortEnd,
-      onAddItem: () => this.onAddItem(),
-      onRemoveItem: () => this.props.onRemoveItem,
-      onEditItem: () => this.onEditItem
-    });
+      onAddItem: this.handleAddItem,
+      onEdit: this.handleEditModal,
+      onRemove: this.handleRemoveModal
+    }), _react.default.createElement(_forma36ReactComponents.ModalConfirm, {
+      isShown: this.state.modal.shown || false,
+      title: "Confirm Entry Removal",
+      intent: "negative",
+      confirmLabel: this.state.modal.confirm || "Confirm",
+      cancelLabel: "Cancel",
+      onCancel: () => this.setState({
+        modal: {
+          shown: false
+        }
+      }),
+      onConfirm: () => {
+        this.setState({
+          modal: {
+            shown: false
+          }
+        });
+        this.handleRemove(this.state.remove);
+      }
+    }, _react.default.createElement("p", null, "You are about to delete SOMETHING.")));
   }
 
 }
@@ -50437,7 +50455,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52223" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55262" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};

@@ -43,6 +43,25 @@ div {
 	margin:0 0 10px;
 	width: 30px;
 	height: 30px;
+	border-radius: 3px;
+    padding: 3px 0 0;
+	
+}
+button > * {
+  pointer-events: none;
+}
+.buttonArea button.editButton{
+	background-color:#e5ebed;
+}
+.buttonArea button.editButton svg{
+	fill:#555;
+}
+.buttonArea button.removeButton{
+	background-color:#d9453f;
+	border-color:#cd3f39;
+}
+.buttonArea button.removeButton svg{
+	fill:white;
 }
 .sortableList>.Button__Button--naked___mB6LS{
 	    border:solid 1px #d3dce0;
