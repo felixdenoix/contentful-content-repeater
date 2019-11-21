@@ -10,8 +10,8 @@ import 'react-quill/dist/quill.snow.css';
 import {
 	CardDragHandle,
 	EntryCard, 
-	Button, 
 	ModalConfirm,
+	Button,
 	Form,
 	TextInput,
 	Textarea,
@@ -140,7 +140,6 @@ export class App extends React.Component {
   	}
   	handleEdit=(props)=>{
 	  	const {fieldChange,items, target} = {...this.state}
-	  	console.log(props)
   		const updateTarget = update(
   			this.state,
   			{
@@ -157,11 +156,7 @@ export class App extends React.Component {
 				  	}
 		  		}
 	  		})
-  		console.log('updated ',updateTarget)
   		this.setState(updateTarget,()=>{this.clearAndSave(true)})
-
-  		
-
 	}
 	//TODO: combine this and handleRemoveModal, since both are just setting states
 	handleEditModal=(props)=>{
@@ -185,7 +180,6 @@ export class App extends React.Component {
 				}
 			
 		  	})
-			console.log(modalSet)
 	  	this.setState(modalSet)
 		  	
 	}
@@ -201,7 +195,6 @@ export class App extends React.Component {
 		this.setState(updates)
 	}
 	handleRTEchange(value){
-		console.log('state',this.state)
 		let target = {...this.state.target}
 		const changed = update(this.state,{
 			target:{
@@ -212,7 +205,7 @@ export class App extends React.Component {
 				}
 			}
 		})
-		this.setState(changed,()=>{console.log('changed',this.state)});
+		this.setState(changed);
 	}
 	
   	handleRemoveModal=(props)=>{
@@ -235,14 +228,13 @@ export class App extends React.Component {
 			 }
 
 	  	)
-	  	console.log(modalSet)
 	  	this.setState({modalSet})
 	}	
   	handleRemove=(props)=>{
 	  	const removal = update(this.state,{
 	  		items:{$splice:[[props.index,1]]}	
 	  		} )
-	  		this.setState(removal,()=>{this.clearAndSave(true)})
+	  	this.setState(removal,()=>{this.clearAndSave(true)})
 	  	 	
   	}
   	
@@ -264,7 +256,7 @@ export class App extends React.Component {
 				  	headline:{$set:''}
 			  	}}
 	  	})
-	  	this.setState({clear})
+	  	this.setState(clear)
 	  	if(save===true)this.props.sdk.field.setValue(this.state)
   	}
   	//add alloy inline to textarea
@@ -284,6 +276,7 @@ export class App extends React.Component {
 			  		name="content" 
 			  		value={this.state.target.body.content||''}
 			  		onChange={(value)=>this.handleRTEchange(value)} 
+			  		modules={this.modules}
 			  		/>
 			  		
 		  		</Form>
@@ -296,7 +289,13 @@ export class App extends React.Component {
 		break;	  
 		}
 	}
-	
+	 modules = {
+		toolbar: [
+			['bold', 'italic', {'script':'super'}],
+	      [{'list': 'ordered'}, {'list': 'bullet'}],
+	      ['clean']
+		    ],
+	  }
   	render() {
 	    return (
 		    <>
@@ -314,7 +313,10 @@ export class App extends React.Component {
 		        intent={this.state.modal.intent||"positive"}
 		        confirmLabel={this.state.modal.confirm||"Confirm"}
 		        cancelLabel="Cancel" 										
-		        onCancel={() => this.clearAndSave}
+		        onCancel={()=>{
+			        this.clearAndSave(false)
+			        }
+		        }
 		        onConfirm={() => {	
 					this.onConfirm(this.state.target)
 		        }}
@@ -326,13 +328,5 @@ export class App extends React.Component {
 	      </>
 		);
 	  }
-}
-
-class ConfirmModal extends ModalConfirm{
-	
-	constructor(props){
-		super(props)
-		
-	}
 }
 init(sdk => {render(<App sdk={sdk} />, document.getElementById('root'));});

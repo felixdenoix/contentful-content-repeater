@@ -74112,7 +74112,6 @@ class App extends _react.default.Component {
         target
       } = _objectSpread({}, this.state);
 
-      console.log(props);
       const updateTarget = (0, _immutabilityHelper.default)(this.state, {
         modal: {
           shown: {
@@ -74132,7 +74131,6 @@ class App extends _react.default.Component {
           }
         }
       });
-      console.log('updated ', updateTarget);
       this.setState(updateTarget, () => {
         this.clearAndSave(true);
       });
@@ -74174,7 +74172,6 @@ class App extends _react.default.Component {
           }
         }
       });
-      console.log(modalSet);
       this.setState(modalSet);
     });
 
@@ -74214,7 +74211,6 @@ class App extends _react.default.Component {
           }
         }
       });
-      console.log(modalSet);
       this.setState({
         modalSet
       });
@@ -74229,6 +74225,16 @@ class App extends _react.default.Component {
       this.setState(removal, () => {
         this.clearAndSave(true);
       });
+    });
+
+    _defineProperty(this, "modules", {
+      toolbar: [['bold', 'italic', {
+        'script': 'super'
+      }], [{
+        'list': 'ordered'
+      }, {
+        'list': 'bullet'
+      }], ['clean']]
     });
 
     this.handleRTEchange = this.handleRTEchange.bind(this);
@@ -74272,8 +74278,6 @@ class App extends _react.default.Component {
   }
 
   handleRTEchange(value) {
-    console.log('state', this.state);
-
     let target = _objectSpread({}, this.state.target);
 
     const changed = (0, _immutabilityHelper.default)(this.state, {
@@ -74285,9 +74289,7 @@ class App extends _react.default.Component {
         }
       }
     });
-    this.setState(changed, () => {
-      console.log('changed', this.state);
-    });
+    this.setState(changed);
   }
 
   onConfirm(props) {
@@ -74322,9 +74324,7 @@ class App extends _react.default.Component {
         }
       }
     });
-    this.setState({
-      clear
-    });
+    this.setState(clear);
     if (save === true) this.props.sdk.field.setValue(this.state);
   } //add alloy inline to textarea
 
@@ -74342,7 +74342,8 @@ class App extends _react.default.Component {
         }), _react.default.createElement(_reactQuill.default, {
           name: "content",
           value: this.state.target.body.content || '',
-          onChange: value => this.handleRTEchange(value)
+          onChange: value => this.handleRTEchange(value),
+          modules: this.modules
         }));
         break;
 
@@ -74369,7 +74370,9 @@ class App extends _react.default.Component {
       intent: this.state.modal.intent || "positive",
       confirmLabel: this.state.modal.confirm || "Confirm",
       cancelLabel: "Cancel",
-      onCancel: () => this.clearAndSave,
+      onCancel: () => {
+        this.clearAndSave(false);
+      },
       onConfirm: () => {
         this.onConfirm(this.state.target);
       }
@@ -74383,13 +74386,6 @@ exports.App = App;
 _defineProperty(App, "propTypes", {
   sdk: _propTypes.default.object.isRequired
 });
-
-class ConfirmModal extends _forma36ReactComponents.ModalConfirm {
-  constructor(props) {
-    super(props);
-  }
-
-}
 
 (0, _contentfulUiExtensionsSdk.init)(sdk => {
   (0, _reactDom.render)(_react.default.createElement(App, {
