@@ -19,8 +19,8 @@ import {
 import '@contentful/forma-36-react-components/dist/styles.css';
 import './index.css'; 
 
-
- //edit: possible modal so to have RTE
+//Cap # of entires based on install param
+//for grid, set Sortable List axis to xy. need to have different CSS to resize the areas
  //truncate P content after xx numbver of words/characters
 const DragHandle = SortableHandle(() => {
 	return(

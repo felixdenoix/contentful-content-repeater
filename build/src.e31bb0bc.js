@@ -74003,7 +74003,8 @@ function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { va
 
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-//edit: possible modal so to have RTE
+//Cap # of entires based on install param
+//for grid, set Sortable List axis to xy. need to have different CSS to resize the areas
 //truncate P content after xx numbver of words/characters
 const DragHandle = (0, _reactSortableHoc.SortableHandle)(() => {
   return _react.default.createElement("div", {
@@ -74420,7 +74421,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "53157" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "60142" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
