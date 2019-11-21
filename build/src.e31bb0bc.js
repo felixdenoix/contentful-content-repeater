@@ -34727,7 +34727,242 @@ function sortableElement(WrappedComponent) {
     collection: 0
   }), _temp;
 }
-},{"@babel/runtime/helpers/esm/extends":"../node_modules/@babel/runtime/helpers/esm/extends.js","@babel/runtime/helpers/esm/slicedToArray":"../node_modules/@babel/runtime/helpers/esm/slicedToArray.js","@babel/runtime/helpers/esm/objectSpread":"../node_modules/@babel/runtime/helpers/esm/objectSpread.js","@babel/runtime/helpers/esm/classCallCheck":"../node_modules/@babel/runtime/helpers/esm/classCallCheck.js","@babel/runtime/helpers/esm/createClass":"../node_modules/@babel/runtime/helpers/esm/createClass.js","@babel/runtime/helpers/esm/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js","@babel/runtime/helpers/esm/getPrototypeOf":"../node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js","@babel/runtime/helpers/esm/inherits":"../node_modules/@babel/runtime/helpers/esm/inherits.js","@babel/runtime/helpers/esm/assertThisInitialized":"../node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js","@babel/runtime/helpers/esm/defineProperty":"../node_modules/@babel/runtime/helpers/esm/defineProperty.js","react":"../node_modules/react/index.js","prop-types":"../node_modules/prop-types/index.js","react-dom":"../node_modules/react-dom/index.js","invariant":"../node_modules/invariant/browser.js","@babel/runtime/helpers/esm/toConsumableArray":"../node_modules/@babel/runtime/helpers/esm/toConsumableArray.js"}],"../node_modules/array-move/index.js":[function(require,module,exports) {
+},{"@babel/runtime/helpers/esm/extends":"../node_modules/@babel/runtime/helpers/esm/extends.js","@babel/runtime/helpers/esm/slicedToArray":"../node_modules/@babel/runtime/helpers/esm/slicedToArray.js","@babel/runtime/helpers/esm/objectSpread":"../node_modules/@babel/runtime/helpers/esm/objectSpread.js","@babel/runtime/helpers/esm/classCallCheck":"../node_modules/@babel/runtime/helpers/esm/classCallCheck.js","@babel/runtime/helpers/esm/createClass":"../node_modules/@babel/runtime/helpers/esm/createClass.js","@babel/runtime/helpers/esm/possibleConstructorReturn":"../node_modules/@babel/runtime/helpers/esm/possibleConstructorReturn.js","@babel/runtime/helpers/esm/getPrototypeOf":"../node_modules/@babel/runtime/helpers/esm/getPrototypeOf.js","@babel/runtime/helpers/esm/inherits":"../node_modules/@babel/runtime/helpers/esm/inherits.js","@babel/runtime/helpers/esm/assertThisInitialized":"../node_modules/@babel/runtime/helpers/esm/assertThisInitialized.js","@babel/runtime/helpers/esm/defineProperty":"../node_modules/@babel/runtime/helpers/esm/defineProperty.js","react":"../node_modules/react/index.js","prop-types":"../node_modules/prop-types/index.js","react-dom":"../node_modules/react-dom/index.js","invariant":"../node_modules/invariant/browser.js","@babel/runtime/helpers/esm/toConsumableArray":"../node_modules/@babel/runtime/helpers/esm/toConsumableArray.js"}],"../node_modules/immutability-helper/index.js":[function(require,module,exports) {
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+var invariant = require("invariant");
+var hasOwnProperty = Object.prototype.hasOwnProperty;
+var splice = Array.prototype.splice;
+var toString = Object.prototype.toString;
+function type(obj) {
+    return toString.call(obj).slice(8, -1);
+}
+var assign = Object.assign || /* istanbul ignore next */ (function (target, source) {
+    getAllKeys(source).forEach(function (key) {
+        if (hasOwnProperty.call(source, key)) {
+            target[key] = source[key];
+        }
+    });
+    return target;
+});
+var getAllKeys = typeof Object.getOwnPropertySymbols === 'function'
+    ? function (obj) { return Object.keys(obj).concat(Object.getOwnPropertySymbols(obj)); }
+    /* istanbul ignore next */
+    : function (obj) { return Object.keys(obj); };
+function copy(object) {
+    return Array.isArray(object)
+        ? assign(object.constructor(object.length), object)
+        : (type(object) === 'Map')
+            ? new Map(object)
+            : (type(object) === 'Set')
+                ? new Set(object)
+                : (object && typeof object === 'object')
+                    ? assign(Object.create(Object.getPrototypeOf(object)), object)
+                    /* istanbul ignore next */
+                    : object;
+}
+var Context = /** @class */ (function () {
+    function Context() {
+        this.commands = assign({}, defaultCommands);
+        this.update = this.update.bind(this);
+        // Deprecated: update.extend, update.isEquals and update.newContext
+        this.update.extend = this.extend = this.extend.bind(this);
+        this.update.isEquals = function (x, y) { return x === y; };
+        this.update.newContext = function () { return new Context().update; };
+    }
+    Object.defineProperty(Context.prototype, "isEquals", {
+        get: function () {
+            return this.update.isEquals;
+        },
+        set: function (value) {
+            this.update.isEquals = value;
+        },
+        enumerable: true,
+        configurable: true
+    });
+    Context.prototype.extend = function (directive, fn) {
+        this.commands[directive] = fn;
+    };
+    Context.prototype.update = function (object, $spec) {
+        var _this = this;
+        var spec = (typeof $spec === 'function') ? { $apply: $spec } : $spec;
+        if (!(Array.isArray(object) && Array.isArray(spec))) {
+            invariant(!Array.isArray(spec), 'update(): You provided an invalid spec to update(). The spec may ' +
+                'not contain an array except as the value of $set, $push, $unshift, ' +
+                '$splice or any custom command allowing an array value.');
+        }
+        invariant(typeof spec === 'object' && spec !== null, 'update(): You provided an invalid spec to update(). The spec and ' +
+            'every included key path must be plain objects containing one of the ' +
+            'following commands: %s.', Object.keys(this.commands).join(', '));
+        var nextObject = object;
+        getAllKeys(spec).forEach(function (key) {
+            if (hasOwnProperty.call(_this.commands, key)) {
+                var objectWasNextObject = object === nextObject;
+                nextObject = _this.commands[key](spec[key], nextObject, spec, object);
+                if (objectWasNextObject && _this.isEquals(nextObject, object)) {
+                    nextObject = object;
+                }
+            }
+            else {
+                var nextValueForKey = type(object) === 'Map'
+                    ? _this.update(object.get(key), spec[key])
+                    : _this.update(object[key], spec[key]);
+                var nextObjectValue = type(nextObject) === 'Map'
+                    ? nextObject.get(key)
+                    : nextObject[key];
+                if (!_this.isEquals(nextValueForKey, nextObjectValue)
+                    || typeof nextValueForKey === 'undefined'
+                        && !hasOwnProperty.call(object, key)) {
+                    if (nextObject === object) {
+                        nextObject = copy(object);
+                    }
+                    if (type(nextObject) === 'Map') {
+                        nextObject.set(key, nextValueForKey);
+                    }
+                    else {
+                        nextObject[key] = nextValueForKey;
+                    }
+                }
+            }
+        });
+        return nextObject;
+    };
+    return Context;
+}());
+exports.Context = Context;
+var defaultCommands = {
+    $push: function (value, nextObject, spec) {
+        invariantPushAndUnshift(nextObject, spec, '$push');
+        return value.length ? nextObject.concat(value) : nextObject;
+    },
+    $unshift: function (value, nextObject, spec) {
+        invariantPushAndUnshift(nextObject, spec, '$unshift');
+        return value.length ? value.concat(nextObject) : nextObject;
+    },
+    $splice: function (value, nextObject, spec, originalObject) {
+        invariantSplices(nextObject, spec);
+        value.forEach(function (args) {
+            invariantSplice(args);
+            if (nextObject === originalObject && args.length) {
+                nextObject = copy(originalObject);
+            }
+            splice.apply(nextObject, args);
+        });
+        return nextObject;
+    },
+    $set: function (value, _nextObject, spec) {
+        invariantSet(spec);
+        return value;
+    },
+    $toggle: function (targets, nextObject) {
+        invariantSpecArray(targets, '$toggle');
+        var nextObjectCopy = targets.length ? copy(nextObject) : nextObject;
+        targets.forEach(function (target) {
+            nextObjectCopy[target] = !nextObject[target];
+        });
+        return nextObjectCopy;
+    },
+    $unset: function (value, nextObject, _spec, originalObject) {
+        invariantSpecArray(value, '$unset');
+        value.forEach(function (key) {
+            if (Object.hasOwnProperty.call(nextObject, key)) {
+                if (nextObject === originalObject) {
+                    nextObject = copy(originalObject);
+                }
+                delete nextObject[key];
+            }
+        });
+        return nextObject;
+    },
+    $add: function (values, nextObject, _spec, originalObject) {
+        invariantMapOrSet(nextObject, '$add');
+        invariantSpecArray(values, '$add');
+        if (type(nextObject) === 'Map') {
+            values.forEach(function (_a) {
+                var key = _a[0], value = _a[1];
+                if (nextObject === originalObject && nextObject.get(key) !== value) {
+                    nextObject = copy(originalObject);
+                }
+                nextObject.set(key, value);
+            });
+        }
+        else {
+            values.forEach(function (value) {
+                if (nextObject === originalObject && !nextObject.has(value)) {
+                    nextObject = copy(originalObject);
+                }
+                nextObject.add(value);
+            });
+        }
+        return nextObject;
+    },
+    $remove: function (value, nextObject, _spec, originalObject) {
+        invariantMapOrSet(nextObject, '$remove');
+        invariantSpecArray(value, '$remove');
+        value.forEach(function (key) {
+            if (nextObject === originalObject && nextObject.has(key)) {
+                nextObject = copy(originalObject);
+            }
+            nextObject.delete(key);
+        });
+        return nextObject;
+    },
+    $merge: function (value, nextObject, _spec, originalObject) {
+        invariantMerge(nextObject, value);
+        getAllKeys(value).forEach(function (key) {
+            if (value[key] !== nextObject[key]) {
+                if (nextObject === originalObject) {
+                    nextObject = copy(originalObject);
+                }
+                nextObject[key] = value[key];
+            }
+        });
+        return nextObject;
+    },
+    $apply: function (value, original) {
+        invariantApply(value);
+        return value(original);
+    },
+};
+var defaultContext = new Context();
+exports.isEquals = defaultContext.update.isEquals;
+exports.extend = defaultContext.extend;
+exports.default = defaultContext.update;
+// @ts-ignore
+exports.default.default = module.exports = assign(exports.default, exports);
+// invariants
+function invariantPushAndUnshift(value, spec, command) {
+    invariant(Array.isArray(value), 'update(): expected target of %s to be an array; got %s.', command, value);
+    invariantSpecArray(spec[command], command);
+}
+function invariantSpecArray(spec, command) {
+    invariant(Array.isArray(spec), 'update(): expected spec of %s to be an array; got %s. ' +
+        'Did you forget to wrap your parameter in an array?', command, spec);
+}
+function invariantSplices(value, spec) {
+    invariant(Array.isArray(value), 'Expected $splice target to be an array; got %s', value);
+    invariantSplice(spec.$splice);
+}
+function invariantSplice(value) {
+    invariant(Array.isArray(value), 'update(): expected spec of $splice to be an array of arrays; got %s. ' +
+        'Did you forget to wrap your parameters in an array?', value);
+}
+function invariantApply(fn) {
+    invariant(typeof fn === 'function', 'update(): expected spec of $apply to be a function; got %s.', fn);
+}
+function invariantSet(spec) {
+    invariant(Object.keys(spec).length === 1, 'Cannot have more than one key in an object with $set');
+}
+function invariantMerge(target, specValue) {
+    invariant(specValue && typeof specValue === 'object', 'update(): $merge expects a spec of type \'object\'; got %s', specValue);
+    invariant(target && typeof target === 'object', 'update(): $merge expects a target of type \'object\'; got %s', target);
+}
+function invariantMapOrSet(target, command) {
+    var typeOfTarget = type(target);
+    invariant(typeOfTarget === 'Map' || typeOfTarget === 'Set', 'update(): %s expects a target of type Set or Map; got %s', command, typeOfTarget);
+}
+
+},{"invariant":"../node_modules/invariant/browser.js"}],"../node_modules/array-move/index.js":[function(require,module,exports) {
 'use strict';
 
 const arrayMoveMutate = (array, from, to) => {
@@ -50241,6 +50476,8 @@ var _contentfulUiExtensionsSdk = require("contentful-ui-extensions-sdk");
 
 var _reactSortableHoc = require("react-sortable-hoc");
 
+var _immutabilityHelper = _interopRequireDefault(require("immutability-helper"));
+
 var _arrayMove = _interopRequireDefault(require("array-move"));
 
 var _forma36ReactComponents = require("@contentful/forma-36-react-components");
@@ -50255,9 +50492,12 @@ function _getRequireWildcardCache() { if (typeof WeakMap !== "function") return 
 
 function _interopRequireWildcard(obj) { if (obj && obj.__esModule) { return obj; } if (obj === null || typeof obj !== "object" && typeof obj !== "function") { return { default: obj }; } var cache = _getRequireWildcardCache(); if (cache && cache.has(obj)) { return cache.get(obj); } var newObj = {}; var hasPropertyDescriptor = Object.defineProperty && Object.getOwnPropertyDescriptor; for (var key in obj) { if (Object.prototype.hasOwnProperty.call(obj, key)) { var desc = hasPropertyDescriptor ? Object.getOwnPropertyDescriptor(obj, key) : null; if (desc && (desc.get || desc.set)) { Object.defineProperty(newObj, key, desc); } else { newObj[key] = obj[key]; } } } newObj.default = obj; if (cache) { cache.set(obj, newObj); } return newObj; }
 
+function ownKeys(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+function _objectSpread(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys(source, true).forEach(function (key) { _defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys(source).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
+
 function _defineProperty(obj, key, value) { if (key in obj) { Object.defineProperty(obj, key, { value: value, enumerable: true, configurable: true, writable: true }); } else { obj[key] = value; } return obj; }
 
-//Add edit, add and remove ui and functions to mangage the list
 //edit: possible modal so to have RTE
 //truncate P content after xx numbver of words/characters
 const DragHandle = (0, _reactSortableHoc.SortableHandle)(() => {
@@ -50283,13 +50523,13 @@ const SortableItem = (0, _reactSortableHoc.SortableElement)(props => {
   }, _react.default.createElement(DragHandle, null), _react.default.createElement("div", null, _react.default.createElement("h3", null, props.value.headline), _react.default.createElement("p", null, props.value.content)), _react.default.createElement("div", {
     className: "buttonArea"
   }, _react.default.createElement("button", {
-    onClick: () => props.onChildEdit(props.value),
+    onClick: () => props.onChildEdit(props),
     type: "button",
     className: "editButton"
   }, _react.default.createElement(_forma36ReactComponents.Icon, {
     icon: "Edit"
   })), _react.default.createElement("button", {
-    onClick: () => props.onChildRemove(props.id, props.childIndex),
+    onClick: () => props.onChildRemove(props),
     className: "removeButton"
   }, _react.default.createElement(_forma36ReactComponents.Icon, {
     icon: "Close"
@@ -50305,7 +50545,8 @@ const SortableList = (0, _reactSortableHoc.SortableContainer)(props => {
     onChildEdit: props.onEdit,
     onChildRemove: props.onRemove,
     id: item.id,
-    childIndex: index
+    childIndex: index,
+    child: item
   })), _react.default.createElement(_forma36ReactComponents.Button, {
     buttonType: "naked",
     isFullWidth: true,
@@ -50316,8 +50557,8 @@ const SortableList = (0, _reactSortableHoc.SortableContainer)(props => {
 });
 
 class App extends _react.default.Component {
-  constructor(props) {
-    super(props);
+  constructor(_props) {
+    super(_props);
 
     _defineProperty(this, "onSortEnd", ({
       oldIndex,
@@ -50334,55 +50575,193 @@ class App extends _react.default.Component {
     _defineProperty(this, "handleAddItem", () => {
       const {
         items
-      } = this.state;
+      } = this.state; //destructure, pull items object out
+
       const newId = 'item-' + [...Array(5)].map(_ => (Math.random() * 36 | 0).toString(36)).join('');
-      const AddState = [...items, {
+      const newObj = {
         "id": newId,
         "content": "",
         "headline": "..."
-      }];
-      this.setState(({
-        items
-      }) => ({
+      };
+      const AddState = [...items, newObj]; //add new item to items object
+
+      this.setState({
         items: AddState
-      }));
+      }, this.handleEditModal({
+        id: newObj.id,
+        childIndex: items.length,
+        child: newObj
+      })); //open edit modal right away
     });
 
-    _defineProperty(this, "handleEdit", item => {
-      console.log(item.id);
-      return _react.default.createElement(_forma36ReactComponents.TextInput, {
-        value: item.headline
+    _defineProperty(this, "handleEdit", props => {
+      //console.log(props)
+      const {
+        fieldChange,
+        items
+      } = _objectSpread({}, this.state); //console.log('field ',fieldChange)
+
+
+      const target = items[props.index]; //console.log('target: ',target)
+
+      if (fieldChange.headline !== undefined) target.headline = fieldChange.headline;
+      if (fieldChange.content !== undefined) target.content = fieldChange.content;
+      const updateTarget = (0, _immutabilityHelper.default)(this.state, {
+        modal: {
+          shown: {
+            $set: false
+          }
+        },
+        fieldChange: {
+          $set: null
+        },
+        target: {
+          $set: null
+        },
+        items: {
+          [props.index]: {
+            $set: target
+          }
+        }
+      }); //console.log('updated ',updateTarget)
+
+      this.setState(updateTarget, () => {
+        console.log(this.state);
       });
     });
 
-    _defineProperty(this, "handleRemoveModal", (itemId, itemIndex) => {
+    _defineProperty(this, "handleEditModal", props => {
       this.setState({
         modal: {
-          confirm: "Delete Entry",
           shown: true,
-          type: "delete"
+          type: 'edit',
+          title: "Edit Entry",
+          intent: "primary",
+          confirm: "Change Entry"
         },
-        remove: {
-          id: itemId,
-          index: itemIndex
+        target: {
+          index: props.childIndex,
+          id: props.id,
+          content: props.child
         }
       });
     });
 
-    _defineProperty(this, "handleRemove", remitem => {
-      const removed = this.state.items.filter((item, index) => remitem.index !== index);
+    _defineProperty(this, "handleRemoveModal", props => {
       this.setState({
-        items: removed,
-        remove: null
+        modal: {
+          shown: true,
+          type: 'delete',
+          title: "Confirm Entry Removal",
+          intent: "negative",
+          confirm: "Confirm Entry Removal"
+        },
+        target: {
+          index: props.childIndex,
+          id: props.id,
+          content: null
+        }
       });
     });
 
-    this.state = props.sdk.field.getValue();
+    _defineProperty(this, "handleRemove", props => {
+      const removal = (0, _immutabilityHelper.default)(this.state, {
+        modal: {
+          shown: {
+            $set: false
+          }
+        },
+        fieldChange: {
+          $set: null
+        },
+        target: {
+          $set: null
+        },
+        items: {
+          $splice: [[props.index, 1]]
+        }
+      });
+      this.setState(removal, () => {
+        this.props.sdk.field.setValue(this.state);
+      }); //this.setState({...this.state,items: this.state.items.filter((item,index)=> props.index!==index)},()=>{this.props.sdk.field.setValue}); 
+    });
+
+    this.state = {
+      modal: {
+        shown: false
+      },
+      target: null
+    };
   }
 
   componentWillMount() {
     this.props.sdk.window.updateHeight();
     this.props.sdk.window.startAutoResizer();
+    this.setState(this.props.sdk.field.getValue());
+    this.setState({
+      modal: {
+        shown: false
+      },
+      target: null,
+      fieldChange: null
+    });
+  }
+
+  componentDidMount() {}
+
+  handleFieldChange(event) {
+    var updates = _objectSpread({}, this.state.fieldChange);
+
+    updates[event.target.name] = event.target.value;
+    this.setState({
+      fieldChange: updates
+    });
+  }
+
+  onConfirm(props) {
+    if (this.state.modal.type === "delete") {
+      this.handleRemove(props);
+    } else {
+      this.handleEdit(props);
+    }
+
+    this.setState({
+      modal: {
+        shown: false
+      },
+      target: null,
+      fieldChange: null
+    });
+    this.props.sdk.field.setValue(this.state);
+  } //add alloy inline to textarea
+
+
+  renderSwitch(param) {
+    switch (param) {
+      case 'edit':
+        return _react.default.createElement(_forma36ReactComponents.Form, {
+          onSubmit: this.onHandleEdit
+        }, _react.default.createElement(_forma36ReactComponents.TextInput, {
+          name: "headline",
+          id: "headline",
+          value: this.state.target.content.headline || '',
+          onChange: e => this.handleFieldChange(e)
+        }), _react.default.createElement(_forma36ReactComponents.Textarea, {
+          name: "content",
+          id: "content",
+          rows: 6,
+          value: this.state.target.content.content || '',
+          onChange: e => this.handleFieldChange(e)
+        }));
+        break;
+
+      case 'delete':
+        return 'You are about to delete this entry.';
+        break;
+
+      default:
+        break;
+    }
   }
 
   render() {
@@ -50394,24 +50773,22 @@ class App extends _react.default.Component {
       onRemove: this.handleRemoveModal
     }), _react.default.createElement(_forma36ReactComponents.ModalConfirm, {
       isShown: this.state.modal.shown || false,
-      title: "Confirm Entry Removal",
-      intent: "negative",
+      size: "large",
+      title: this.state.modal.title || "Modal",
+      intent: this.state.modal.intent || "positive",
       confirmLabel: this.state.modal.confirm || "Confirm",
       cancelLabel: "Cancel",
       onCancel: () => this.setState({
         modal: {
           shown: false
-        }
+        },
+        target: null,
+        fieldChange: null
       }),
       onConfirm: () => {
-        this.setState({
-          modal: {
-            shown: false
-          }
-        });
-        this.handleRemove(this.state.remove);
+        this.onConfirm(this.state.target);
       }
-    }, _react.default.createElement("p", null, "You are about to delete SOMETHING.")));
+    }, this.renderSwitch(this.state.modal.type), this.props.children));
   }
 
 }
@@ -50422,12 +50799,19 @@ _defineProperty(App, "propTypes", {
   sdk: _propTypes.default.object.isRequired
 });
 
+class ConfirmModal extends _forma36ReactComponents.ModalConfirm {
+  constructor(props) {
+    super(props);
+  }
+
+}
+
 (0, _contentfulUiExtensionsSdk.init)(sdk => {
   (0, _reactDom.render)(_react.default.createElement(App, {
     sdk: sdk
   }), document.getElementById('root'));
 });
-},{"react":"../node_modules/react/index.js","prop-types":"../node_modules/prop-types/index.js","react-dom":"../node_modules/react-dom/index.js","contentful-ui-extensions-sdk":"../node_modules/contentful-ui-extensions-sdk/dist/cf-extension-api.js","react-sortable-hoc":"../node_modules/react-sortable-hoc/dist/react-sortable-hoc.esm.js","array-move":"../node_modules/array-move/index.js","@contentful/forma-36-react-components":"../node_modules/@contentful/forma-36-react-components/dist/esm/index.js","@contentful/forma-36-react-components/dist/styles.css":"../node_modules/@contentful/forma-36-react-components/dist/styles.css","./index.css":"index.css"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+},{"react":"../node_modules/react/index.js","prop-types":"../node_modules/prop-types/index.js","react-dom":"../node_modules/react-dom/index.js","contentful-ui-extensions-sdk":"../node_modules/contentful-ui-extensions-sdk/dist/cf-extension-api.js","react-sortable-hoc":"../node_modules/react-sortable-hoc/dist/react-sortable-hoc.esm.js","immutability-helper":"../node_modules/immutability-helper/index.js","array-move":"../node_modules/array-move/index.js","@contentful/forma-36-react-components":"../node_modules/@contentful/forma-36-react-components/dist/esm/index.js","@contentful/forma-36-react-components/dist/styles.css":"../node_modules/@contentful/forma-36-react-components/dist/styles.css","./index.css":"index.css"}],"../node_modules/parcel-bundler/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -50455,7 +50839,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "55262" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "64499" + '/');
 
   ws.onmessage = function (event) {
     checkedAssets = {};
