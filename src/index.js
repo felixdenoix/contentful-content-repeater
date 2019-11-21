@@ -5,6 +5,8 @@ import { init } from 'contentful-ui-extensions-sdk';
 import {SortableContainer, SortableElement, SortableHandle} from 'react-sortable-hoc';
 import update from 'immutability-helper';
 import arrayMove from 'array-move';
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css';
 import {
 	CardDragHandle,
 	EntryCard, 
@@ -48,8 +50,8 @@ const SortableItem = SortableElement((props) => {
 		<div className="Item" >
 			<DragHandle/>
 			<div>
-				<h3>{props.value.headline}</h3>
-				<p>{props.value.content}</p>
+				<h3>{props.child.body.headline}</h3>
+				<div dangerouslySetInnerHTML={{ __html:props.child.body.content}}/>
 			</div>
 
 			<div className="buttonArea">
@@ -106,9 +108,8 @@ export class App extends React.Component {
 	};
 	constructor(props) {
 		super(props);
-		this.state = {
-			modal:{shown:false},
-			target:null}
+		this.handleRTEchange = this.handleRTEchange.bind(this)
+		this.clearAndSave = this.clearAndSave.bind(this)
 			
 	}
 	
@@ -118,14 +119,10 @@ export class App extends React.Component {
 	  this.setState(this.props.sdk.field.getValue())
 	  this.setState({
 		  	modal:{shown:false},
-		  	target:null,
-		  	fieldChange:null})
-	  
+		  	target:{id:'',index:null,body:{content:'',headline:''}},
+		  	})
 	}
-	componentDidMount(){
-		
-
-	}
+	
 	onSortEnd = ({oldIndex, newIndex}) => {	  
 		this.setState(({items}) => ({
 	      items: arrayMove(items, oldIndex, newIndex),
@@ -135,91 +132,117 @@ export class App extends React.Component {
   
   	handleAddItem=()=>{
 		const {items} = this.state;//destructure, pull items object out
-
 		const newId = 'item-'+[...Array(5)].map(_=>(Math.random()*36|0).toString(36)).join('');
-		const newObj = {"id":newId	,"content":"","headline":"..."}
+		const newObj = {"id":newId	,"body":{"content":"","headline":"..."}}
 		const AddState = [...items, newObj]//add new item to items object
 		this.setState({items:AddState},this.handleEditModal({id:newObj.id, childIndex:(items.length), child:newObj}));
-		
-		//open edit modal right away
+
   	}
   	handleEdit=(props)=>{
-//console.log(props)
-	  	const {fieldChange,items} = {...this.state}
-	  	//console.log('field ',fieldChange)
-	  	const target  = items[props.index]
-	  	//console.log('target: ',target)
-	  	if(fieldChange.headline !== undefined)target.headline = fieldChange.headline;
-	  	if(fieldChange.content!==undefined)target.content = fieldChange.content;
-  		const updateTarget = update(this.state,{
-	  		modal:{
-		  		shown:{$set:false},
-		  		},
-	  		fieldChange:{$set:null},
-		  	target:{$set:null},
-	  		items:{[props.index]:{$set:target}}
-		  		
+	  	const {fieldChange,items, target} = {...this.state}
+	  	console.log(props)
+  		const updateTarget = update(
+  			this.state,
+  			{
+		  		modal:{
+			  		shown:{$set:false},
+			  		},
+		  		items:{
+			  		[props.index]:
+			  		{body:
+				  		{
+				  		content:{$set:target.body.content},
+				  		headline:{$set:target.body.headline}
+				  		}
+				  	}
+		  		}
 	  		})
-  		//console.log('updated ',updateTarget)
-  		this.setState(updateTarget,()=>{console.log(this.state)})
+  		console.log('updated ',updateTarget)
+  		this.setState(updateTarget,()=>{this.clearAndSave(true)})
 
   		
 
 	}
-	
+	//TODO: combine this and handleRemoveModal, since both are just setting states
 	handleEditModal=(props)=>{
-	  	this.setState({
-		  	modal:{
-			  	shown:true,
-			  	type:'edit',
-			  	title: "Edit Entry",
-			  	intent:"primary",
-			  	confirm:"Change Entry",
+		const modalSet = update(
+			this.state,{
+				modal:{
+				  	shown:{$set:true},
+				  	type:{$set:'edit'},
+				  	title: {$set:"Edit Entry"},
+				  	intent:{$set:"primary"},
+				  	confirm:{$set:"Change Entry"},
 			  	
 			  	},
-			target:{
-				index:props.childIndex,
-				id:props.id,
-				content:props.child
-			}
+				target:{
+					index:{$set:props.childIndex},
+					id:{$set:props.id},
+					body:{
+						headline:{$set:props.child.body.headline},
+						content:{$set:props.child.body.content}
+					}
+				}
 			
 		  	})
+			console.log(modalSet)
+	  	this.setState(modalSet)
+		  	
 	}
 	handleFieldChange(event){
-		var updates = {...this.state.fieldChange}
-		updates[event.target.name]=event.target.value;
-		this.setState({fieldChange:updates})
+		const {name, value} = event.target
+		const updates = update(this.state,{
+			target:{
+				body:{
+					[name]:{$set:value}
+				}
+			}
+		})
+		this.setState(updates)
+	}
+	handleRTEchange(value){
+		console.log('state',this.state)
+		let target = {...this.state.target}
+		const changed = update(this.state,{
+			target:{
+				body:{
+					content:{
+						$set:value
+					}
+				}
+			}
+		})
+		this.setState(changed,()=>{console.log('changed',this.state)});
 	}
 	
   	handleRemoveModal=(props)=>{
-	  	this.setState({
+	  	const modalSet = update(this.state,{
 		  	modal:{
-			  	shown:true,
-			  	type:'delete',
-			  	title: "Confirm Entry Removal",
-			  	intent:"negative",
-			  	confirm:"Confirm Entry Removal",
+			  	shown:{$set:true},
+			  	type:{$set:'delete'},
+			  	title: {$set:"Confirm Entry Removal"},
+			  	intent:{$set:"negative"},
+			  	confirm:{$sert:"Confirm Entry Removal"},
 			  	}, 
 		  	target:{
-			  	index:props.childIndex,
-			  	id:props.id,
-			  	content:null
+			  	index:{$set:props.childIndex},
+			  	id:{$set:''},
+			  	body:{
+				  	content:{$set:''},
+				  	headline:{$set:''}
+				  	}
 			  	}
-			
-		  	})
+			 }
+
+	  	)
+	  	console.log(modalSet)
+	  	this.setState({modalSet})
 	}	
   	handleRemove=(props)=>{
 	  	const removal = update(this.state,{
-		  	modal:{
-		  		shown:{$set:false},
-		  		},
-	  		fieldChange:{$set:null},
-		  	target:{$set:null},
-	  		items:{$splice:[[props.index,1]]}
-		  		
+	  		items:{$splice:[[props.index,1]]}	
 	  		} )
-	  		this.setState(removal,()=>{this.props.sdk.field.setValue(this.state)})
-	  	//this.setState({...this.state,items: this.state.items.filter((item,index)=> props.index!==index)},()=>{this.props.sdk.field.setValue}); 
+	  		this.setState(removal,()=>{this.clearAndSave(true)})
 	  	 	
   	}
   	
@@ -229,11 +252,20 @@ export class App extends React.Component {
 	  	}else{
 		  	this.handleEdit(props)
 	  	}
-	  	this.setState({
-		  	modal:{shown:false},
-		  	target:null,
-		  	fieldChange:null})
-		 this.props.sdk.field.setValue(this.state)
+  	}
+  	clearAndSave(save){
+	  	const clear = update(this.state,{
+		  	modal:{shown:{$set:false}},
+		  	target:{
+			  	id:{$set:''},
+			  	index:{$set:''},
+			  	body:{
+				  	content:{$set:''},
+				  	headline:{$set:''}
+			  	}}
+	  	})
+	  	this.setState({clear})
+	  	if(save===true)this.props.sdk.field.setValue(this.state)
   	}
   	//add alloy inline to textarea
   	renderSwitch(param) {
@@ -244,16 +276,16 @@ export class App extends React.Component {
 			  		<TextInput 
 			  		name="headline" 
 			  		id="headline" 
-			  		value={this.state.target.content.headline||''}
+			  		value={this.state.target.body.headline||''}
 			  		onChange={(e)=>this.handleFieldChange(e)}
 			  		/>
 			  		
-			  		<Textarea 
+			  		<ReactQuill 
 			  		name="content" 
-			  		id="content" 
-			  		rows={6}
-			  		 value={this.state.target.content.content||''}
-			  		onChange={(e)=>this.handleFieldChange(e)}/>
+			  		value={this.state.target.body.content||''}
+			  		onChange={(value)=>this.handleRTEchange(value)} 
+			  		/>
+			  		
 		  		</Form>
 		  		)
 		break;
@@ -282,7 +314,7 @@ export class App extends React.Component {
 		        intent={this.state.modal.intent||"positive"}
 		        confirmLabel={this.state.modal.confirm||"Confirm"}
 		        cancelLabel="Cancel" 										
-		        onCancel={() => this.setState({modal:{shown:false},target:null,fieldChange:null})}
+		        onCancel={() => this.clearAndSave}
 		        onConfirm={() => {	
 					this.onConfirm(this.state.target)
 		        }}
