@@ -306,6 +306,7 @@ export class App extends React.Component {
 			    onEdit = {this.handleEditModal}
 			    onRemove = {this.handleRemoveModal}
 		    /> 
+		    
 		    <ModalConfirm
 		        isShown={this.state.modal.shown||false}
 		        size="large"
