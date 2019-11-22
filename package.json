@@ -8,7 +8,7 @@
     "@babel/plugin-transform-runtime": "^7.6.2",
     "@babel/preset-env": "^7.7.1",
     "@babel/preset-react": "^7.7.0",
-    "@contentful/contentful-extension-scripts": "0.14.0",
+    "@contentful/contentful-extension-scripts": "^0.14.1",
     "@contentful/eslint-config-extension": "0.2.0",
     "@testing-library/react": "8.0.4",
     "array-move": "^2.2.0",
